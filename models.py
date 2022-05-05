@@ -126,6 +126,8 @@ class DCDiscriminator(nn.Module):
     def __init__(self):
         super(DCDiscriminator, self).__init__()
 
+        self.conv1 = conv(in_channels=3, out_channels=32, kernel_size=3)
+
         ###########################################
         ##   FILL THIS IN: CREATE ARCHITECTURE   ##
         ###########################################
