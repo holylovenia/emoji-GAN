@@ -11,7 +11,7 @@ def get_emoji_loader(emoji_type, opts):
     """Creates training and test data loaders.
     """
     transform = transforms.Compose([
-                    transforms.Scale(opts.image_size),
+                    transforms.Resize(opts.image_size),
                     transforms.ToTensor(),
                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
                 ])
