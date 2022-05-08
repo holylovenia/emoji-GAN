@@ -90,13 +90,14 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         # ============================================
 
         # Train with real images
+        d_optimizer.zero_grad()
 
         # 1. Compute the discriminator losses on real images
         D_X_loss = torch.mean((D_X(images_X) - 1)**2)
         D_Y_loss = torch.mean((D_Y(images_Y) - 1)**2)
-        d_real_loss = D_X_loss + D_Y_loss
 
         d_real_loss = D_X_loss + D_Y_loss
+
         d_real_loss.backward()
         d_optimizer.step()
 
@@ -116,6 +117,7 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         D_Y_loss = torch.mean(D_Y(fake_Y)**2)
 
         d_fake_loss = D_X_loss + D_Y_loss
+        
         d_fake_loss.backward()
         d_optimizer.step()
 
@@ -136,11 +138,10 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
 
         # 2. Compute the generator loss based on domain X
         g_loss = torch.mean((D_X(fake_X) - 1)**2)
-        reconstructed_Y = G_XtoY(fake_X)
 
         # 3. Compute the cycle consistency loss (the reconstruction loss)
-        cycle_consistency_loss = torch.mean(torch.sum(
-            torch.abs(images_Y - reconstructed_Y), (1,2,3)))
+        reconstructed_Y = G_XtoY(fake_X)
+        cycle_consistency_loss = torch.mean((images_Y - reconstructed_Y)**2)
 
         g_loss += cycle_consistency_loss
 
@@ -158,11 +159,10 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
 
         # 2. Compute the generator loss based on domain Y
         g_loss = torch.mean((D_Y(fake_Y) - 1)**2)
-        reconstructed_X = G_YtoX(fake_Y)
 
         # 3. Compute the cycle consistency loss (the reconstruction loss)
-        cycle_consistency_loss = torch.mean(torch.sum(
-            torch.abs(images_X - reconstructed_X), (1,2,3)))
+        reconstructed_X = G_YtoX(fake_Y)
+        cycle_consistency_loss = torch.mean((images_X - reconstructed_X)**2)
         
         g_loss += cycle_consistency_loss
 
@@ -180,7 +180,9 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
             logger.add_scalar('D_Y_loss/train', D_Y_loss.item(), iteration)
             logger.add_scalar('D_X_loss/train', D_X_loss.item(), iteration)
             logger.add_scalar('d_fake_loss/train', d_fake_loss.item(), iteration)
+            logger.add_scalar('total_d_loss/train', d_real_loss.item() + D_Y_loss.item() + D_X_loss.item() + d_fake_loss.item(), iteration)
             logger.add_scalar('g_loss/train', g_loss.item(), iteration)
+            logger.add_scalar('total_g_loss/train', g_loss.item(), iteration)
 
 
         # Save the generated samples
@@ -243,10 +245,10 @@ def create_parser():
     parser.add_argument('--init_zero_weights', action='store_true', default=False, help='Choose whether to initialize the generator conv weights to 0 (implements the identity function).')
 
     # Training hyper-parameters
-    parser.add_argument('--train_iters', type=int, default=100000, help='The number of training iterations to run (you can Ctrl-C out earlier if you want).')
+    parser.add_argument('--train_iters', type=int, default=150000, help='The number of training iterations to run (you can Ctrl-C out earlier if you want).')
     parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
     parser.add_argument('--num_workers', type=int, default=4, help='The number of threads to use for the DataLoader.')
-    parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
+    parser.add_argument('--lr', type=float, default=3e-4, help='The learning rate (default 0.0003)')
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)
 

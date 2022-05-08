@@ -40,7 +40,7 @@ def train(train_loader, opts, device, logger):
     g_optimizer = optim.Adam(G.parameters(), opts.lr, [opts.beta1, opts.beta2])
     d_optimizer = optim.Adam(D.parameters(), opts.lr, [opts.beta1, opts.beta2])
     
-    fixed_noise = sample_noise(16, opts.noise_size).to(device)
+    fixed_noise = sample_noise(opts.batch_size, opts.noise_size).to(device)
     
     iteration = 1
     
@@ -64,7 +64,7 @@ def train(train_loader, opts, device, logger):
             D_real_loss = 0.5 * torch.mean((D(real_images)-1)**2)  # mean calculate 1/m * sum
 
             # 2. Sample noise
-            noise = sample_noise(100, opts.noise_size).to(device)
+            noise = sample_noise(opts.batch_size, opts.noise_size).to(device)
 
             # 3. Generate fake images from the noise
             fake_images = G(noise)
@@ -86,7 +86,7 @@ def train(train_loader, opts, device, logger):
             g_optimizer.zero_grad()
 
             # 1. Sample noise
-            noise = sample_noise(100, opts.noise_size).to(device)
+            noise = sample_noise(opts.batch_size, opts.noise_size).to(device)
 
             # 2. Generate fake images from the noise
             fake_images = G(noise)
@@ -104,6 +104,7 @@ def train(train_loader, opts, device, logger):
                        iteration, total_train_iters, D_real_loss.item(), D_fake_loss.item(), G_loss.item()))
                 logger.add_scalar('D_real_loss/train', D_real_loss.item(), iteration)
                 logger.add_scalar('D_fake_loss/train', D_fake_loss.item(), iteration)
+                logger.add_scalar('D_total_loss/train', D_total_loss.item(), iteration)
                 logger.add_scalar('G_loss/train', G_loss.item(), iteration)
 
             # Save the generated samples
@@ -152,9 +153,9 @@ def create_parser():
 
     # Training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=1000)
-    parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
+    parser.add_argument('--batch_size', type=int, default=32, help='The number of images in a batch.')
     parser.add_argument('--num_workers', type=int, default=4, help='The number of threads to use for the DataLoader.')
-    parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
+    parser.add_argument('--lr', type=float, default=3e-4, help='The learning rate (default 0.0003)')
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)
 
