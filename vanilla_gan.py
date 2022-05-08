@@ -61,7 +61,7 @@ def train(train_loader, opts, device, logger):
             d_optimizer.zero_grad()
 
             # 1. Compute the discriminator loss on real images
-            D_real_loss = 0.5 * torch.mean((D(real_images)-1)**2)  # mean calculate 1/m * sum
+            D_real_loss = 0.5 * torch.mean((D(real_images)-1)**2)
 
             # 2. Sample noise
             noise = sample_noise(opts.batch_size, opts.noise_size).to(device)
@@ -70,7 +70,7 @@ def train(train_loader, opts, device, logger):
             fake_images = G(noise)
 
             # 4. Compute the discriminator loss on the fake images
-            D_fake_loss = 0.5 * torch.mean((D(fake_images))**2)         
+            D_fake_loss = 0.5 * torch.mean((D(fake_images))**2)
 
             # 5. Compute the total discriminator loss
             D_total_loss = D_real_loss + D_fake_loss

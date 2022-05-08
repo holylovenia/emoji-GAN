@@ -117,7 +117,7 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
         D_Y_loss = torch.mean(D_Y(fake_Y)**2)
 
         d_fake_loss = D_X_loss + D_Y_loss
-        
+
         d_fake_loss.backward()
         d_optimizer.step()
 
