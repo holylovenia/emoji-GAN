@@ -33,6 +33,7 @@ import scipy.misc
 from data_loader import get_emoji_loader
 from models import CycleGenerator, DCDiscriminator
 from cycle_utils import create_dir, create_model, checkpoint, save_samples
+from torch.utils.tensorboard import SummaryWriter
 
 
 SEED = 11
@@ -41,7 +42,7 @@ np.random.seed(SEED)
 torch.manual_seed(SEED)
 
 
-def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader_Y, device, opts):
+def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader_Y, device, opts, logger):
     """Runs the training loop.
         * Saves checkpoint every opts.checkpoint_every iterations
         * Saves generated samples every opts.sample_every iterations
@@ -175,6 +176,11 @@ def training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader
                   'd_fake_loss: {:6.4f} | g_loss: {:6.4f}'.format(
                     iteration, opts.train_iters, d_real_loss.item(), D_Y_loss.item(),
                     D_X_loss.item(), d_fake_loss.item(), g_loss.item()))
+            logger.add_scalar('d_real_loss/train', d_real_loss.item(), iteration)
+            logger.add_scalar('D_Y_loss/train', D_Y_loss.item(), iteration)
+            logger.add_scalar('D_X_loss/train', D_X_loss.item(), iteration)
+            logger.add_scalar('d_fake_loss/train', d_fake_loss.item(), iteration)
+            logger.add_scalar('g_loss/train', g_loss.item(), iteration)
 
 
         # Save the generated samples
@@ -206,8 +212,11 @@ def main(opts):
         
 
     # Start training
+    writer = SummaryWriter(comment='_cycle')
     training_loop(dataloader_X, dataloader_Y, test_dataloader_X, test_dataloader_Y, 
-                  device, opts)
+                  device, opts, writer)
+    writer.flush()
+    writer.close()
 
 
 def print_opts(opts):
@@ -236,7 +245,7 @@ def create_parser():
     # Training hyper-parameters
     parser.add_argument('--train_iters', type=int, default=100000, help='The number of training iterations to run (you can Ctrl-C out earlier if you want).')
     parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
-    parser.add_argument('--num_workers', type=int, default=0, help='The number of threads to use for the DataLoader.')
+    parser.add_argument('--num_workers', type=int, default=4, help='The number of threads to use for the DataLoader.')
     parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)

@@ -87,14 +87,14 @@ class CycleGenerator(nn.Module):
     """Defines the architecture of the generator network.
        Note: Both generators G_XtoY and G_YtoX have the same architecture in this assignment.
     """
-    def __init__(self, conv_dim=32):
+    def __init__(self, conv_dim=32, init_zero_weights=False):
         super(CycleGenerator, self).__init__()
 
         # 1. Define the encoder part of the generator (that extracts features from the input image)
         self.conv1 = conv(
-            in_channels=3, out_channels=conv_dim, kernel_size=4)
+            in_channels=3, out_channels=conv_dim, kernel_size=4, init_zero_weights=init_zero_weights)
         self.conv2 = conv(
-            in_channels=conv_dim, out_channels=conv_dim*2, kernel_size=4)
+            in_channels=conv_dim, out_channels=conv_dim*2, kernel_size=4, init_zero_weights=init_zero_weights)
 
         # 2. Define the transformation part of the generator
         self.resnet_block = ResnetBlock(conv_dim*2)

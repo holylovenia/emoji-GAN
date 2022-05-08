@@ -21,6 +21,7 @@ import torch.optim as optim
 # Local imports
 from data_loader import get_emoji_loader
 from models import CycleGenerator, DCDiscriminator
+from torch.utils.tensorboard import SummaryWriter
 from vanilla_utils import create_dir, create_model, checkpoint, sample_noise, save_samples
 
 SEED = 11
@@ -29,7 +30,7 @@ SEED = 11
 np.random.seed(SEED)
 torch.manual_seed(SEED)
 
-def train(train_loader, opt, device):
+def train(train_loader, opts, device, logger):
     
     G, D = create_model(opts)
     
@@ -63,7 +64,7 @@ def train(train_loader, opt, device):
             D_real_loss = 0.5 * torch.mean((D(real_images)-1)**2)  # mean calculate 1/m * sum
 
             # 2. Sample noise
-            noise = sample_noise(100, opts.noise_size)
+            noise = sample_noise(100, opts.noise_size).to(device)
 
             # 3. Generate fake images from the noise
             fake_images = G(noise)
@@ -85,7 +86,7 @@ def train(train_loader, opt, device):
             g_optimizer.zero_grad()
 
             # 1. Sample noise
-            noise = sample_noise(100, opts.noise_size)
+            noise = sample_noise(100, opts.noise_size).to(device)
 
             # 2. Generate fake images from the noise
             fake_images = G(noise)
@@ -101,6 +102,9 @@ def train(train_loader, opt, device):
             if iteration % opts.log_step == 0:
                 print('Iteration [{:4d}/{:4d}] | D_real_loss: {:6.4f} | D_fake_loss: {:6.4f} | G_loss: {:6.4f}'.format(
                        iteration, total_train_iters, D_real_loss.item(), D_fake_loss.item(), G_loss.item()))
+                logger.add_scalar('D_real_loss/train', D_real_loss.item(), iteration)
+                logger.add_scalar('D_fake_loss/train', D_fake_loss.item(), iteration)
+                logger.add_scalar('G_loss/train', G_loss.item(), iteration)
 
             # Save the generated samples
             if iteration % opts.sample_every == 0:
@@ -126,11 +130,14 @@ def main(opts):
     create_dir(opts.sample_dir)
     
     if torch.cuda.is_available():
-        device = torch.device('cpu')
-    else:
         device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
 
-    train(train_loader, opts, device)
+    writer = SummaryWriter(comment='_vanilla')
+    train(train_loader, opts, device, writer)
+    writer.flush()
+    writer.close()
 
 
 def create_parser():
@@ -146,7 +153,7 @@ def create_parser():
     # Training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=1000)
     parser.add_argument('--batch_size', type=int, default=16, help='The number of images in a batch.')
-    parser.add_argument('--num_workers', type=int, default=0, help='The number of threads to use for the DataLoader.')
+    parser.add_argument('--num_workers', type=int, default=4, help='The number of threads to use for the DataLoader.')
     parser.add_argument('--lr', type=float, default=0.0003, help='The learning rate (default 0.0003)')
     parser.add_argument('--beta1', type=float, default=0.5)
     parser.add_argument('--beta2', type=float, default=0.999)
